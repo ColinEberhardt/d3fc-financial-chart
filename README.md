@@ -9,3 +9,4 @@ The goals of this project are to:
  - Demo the hard stuff (streaming data, pan / zoom / navigator user interactions)
 
 If you need to build a complex, high performance chart, this project will hopefully be a useful template that sets you off in teh right direction.
+
