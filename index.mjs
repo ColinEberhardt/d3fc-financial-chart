@@ -3,23 +3,6 @@ import feed from "./feed.js";
 
 let data = [];
 
-const pushUpdate = ({date, value}) => {
-  const latest = data.length > 0 ? data[data.length - 1] : null;
-  if (latest && latest.date.getTime() === date.getTime()) {
-    latest.close = value;
-    latest.high  = Math.max(value, latest.high);
-    latest.low  = Math.min(value, latest.low); 
-  } else {
-    data.push({
-      date: date,
-      high: value,
-      low: value,
-      open: value,
-      close: value,
-    });
-  }
-};
-
 const xExtent = fc.extentDate().accessors([(d) => d.date]);
 
 const yExtent = fc
@@ -47,7 +30,7 @@ const multi = fc
 
 chart.svgPlotArea(multi);
 
-function renderChart() {
+const renderChart = () => {
   // Create and apply the bollinger algorithm
   const bollingerAlgorithm = fc.indicatorBollingerBands().value((d) => d.close);
   const bollingerData = bollingerAlgorithm(data);
@@ -60,13 +43,34 @@ function renderChart() {
   chart.xDomain(xExtent(mergedData)).yDomain(yExtent(mergedData));
 
   d3.select("#chart").datum(mergedData).call(chart);
-}
+};
 
-feed("ETH-USD", (update) => {
-  if (Array.isArray(update)) {
-    data = update;
+const pushUpdate = ({ date, value }) => {
+  const latest = data.length > 0 ? data[data.length - 1] : null;
+  if (latest && latest.date.getTime() === date.getTime()) {
+    latest.close = value;
+    latest.high = Math.max(value, latest.high);
+    latest.low = Math.min(value, latest.low);
   } else {
-    pushUpdate(update);
+    data.push({
+      date: date,
+      high: value,
+      low: value,
+      open: value,
+      close: value,
+    });
   }
-  renderChart();
-});
+};
+
+const start = async () => {
+  for await (const update of feed("ETH-USD")) {
+    if (Array.isArray(update)) {
+      data = update;
+    } else {
+      pushUpdate(update);
+    }
+    renderChart();
+  }
+};
+
+start();

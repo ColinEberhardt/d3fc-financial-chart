@@ -7,15 +7,25 @@ const roundToMinute = (date) =>
 const addMinutes = (date, minutes) =>
   new Date(date.getTime() - 1000 * 60 * minutes);
 
-const subscribe = async (symbol, callback) => {
+// see: https://www.bignerdranch.com/blog/asyncing-feeling-about-javascript-generators/
+const oncePromise = (emitter, event) =>
+  new Promise((resolve) => {
+    const handler = (...args) => {
+      emitter.removeEventListener(event, handler);
+      resolve(...args);
+    };
+    emitter.addEventListener(event, handler);
+  });
+
+async function* subscribe(symbol) {
   const now = new Date();
   const end = now.toISOString();
   const start = addMinutes(now, 120).toISOString();
   const res = await fetch(
     `${GDAX_URL}products/${symbol}/candles?granularity=60&start=${start}&end=${end}`
   );
-  let candles = await res.json();
-  candles = candles
+  const candles = await res.json();
+  yield candles
     .map((d) => ({
       date: roundToMinute(new Date(d[0] * 1000)),
       low: Number(d[1]),
@@ -24,7 +34,6 @@ const subscribe = async (symbol, callback) => {
       close: Number(d[4]),
     }))
     .reverse();
-  callback(candles);
 
   const ws = new WebSocket(SOCKET_URL);
   ws.onopen = () => {
@@ -42,16 +51,16 @@ const subscribe = async (symbol, callback) => {
     );
   };
 
-  ws.onmessage = (msg) => {
-    const event = JSON.parse(msg.data);
+  while (ws.readyState !== 3) {
+    const message = await oncePromise(ws, "message");
+    const event = JSON.parse(message.data);
     if (event.type === "ticker") {
-      console.log(new Date(), Number(event.price));
-      callback({
+      yield {
         date: roundToMinute(new Date(event.time)),
         value: Number(event.price),
-      });
+      };
     }
-  };
-};
+  }
+}
 
 export default subscribe;
