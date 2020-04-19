@@ -1,7 +1,24 @@
 import bollingerBandSeries from "./bollingerBandSeries.js";
+import feed from "./feed.js";
 
-const stream = fc.randomFinancial().stream();
-const data = stream.take(110);
+let data = [];
+
+const pushUpdate = ({date, value}) => {
+  const latest = data.length > 0 ? data[data.length - 1] : null;
+  if (latest && latest.date.getTime() === date.getTime()) {
+    latest.close = value;
+    latest.high  = Math.max(value, latest.high);
+    latest.low  = Math.min(value, latest.low); 
+  } else {
+    data.push({
+      date: date,
+      high: value,
+      low: value,
+      open: value,
+      close: value,
+    });
+  }
+};
 
 const xExtent = fc.extentDate().accessors([(d) => d.date]);
 
@@ -9,8 +26,8 @@ const yExtent = fc
   .extentLinear()
   .accessors([
     (d) => d.bollinger.upper,
-    (d) => d.high,
     (d) => d.bollinger.lower,
+    (d) => d.high,
     (d) => d.low,
   ]);
 
@@ -31,10 +48,6 @@ const multi = fc
 chart.svgPlotArea(multi);
 
 function renderChart() {
-  // add a new datapoint and remove an old one
-  data.push(stream.next());
-  data.shift();
-
   // Create and apply the bollinger algorithm
   const bollingerAlgorithm = fc.indicatorBollingerBands().value((d) => d.close);
   const bollingerData = bollingerAlgorithm(data);
@@ -49,5 +62,11 @@ function renderChart() {
   d3.select("#chart").datum(mergedData).call(chart);
 }
 
-// re-render the chart every 200ms
-setInterval(renderChart, 200);
+feed("ETH-USD", (update) => {
+  if (Array.isArray(update)) {
+    data = update;
+  } else {
+    pushUpdate(update);
+  }
+  renderChart();
+});
