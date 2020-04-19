@@ -1,3 +1,11 @@
+import {
+  expose,
+  transferHandlers,
+} from "https://unpkg.com/comlink@4.2.0/dist/esm/comlink.mjs";
+import { asyncIterableTransferHandler } from "./iterableTransferHandlers.js";
+
+transferHandlers.set("asyncIterable", asyncIterableTransferHandler);
+
 const SOCKET_URL = "wss://ws-feed.pro.coinbase.com";
 const GDAX_URL = "https://api.pro.coinbase.com/";
 
@@ -63,4 +71,6 @@ async function* subscribe(symbol) {
   }
 }
 
-export default subscribe;
+expose({
+  subscribe,
+});

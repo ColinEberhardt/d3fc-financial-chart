@@ -1,5 +1,12 @@
+import {
+  wrap,
+  transferHandlers,
+} from "https://unpkg.com/comlink@4.2.0/dist/esm/comlink.mjs";
+import { asyncIterableTransferHandler } from "./iterableTransferHandlers.js";
 import bollingerBandSeries from "./bollingerBandSeries.js";
-import feed from "./feed.js";
+
+transferHandlers.set("asyncIterable", asyncIterableTransferHandler);
+const subscriptionService = wrap(new Worker("./feed.js", { type: "module" }));
 
 let data = [];
 
@@ -20,13 +27,13 @@ const chart = fc
   .chartLabel("Streaming Idempotent Chart");
 
 // Create the gridlines and series
-const gridlines = fc.annotationSvgGridline();
-const candlestick = fc.seriesSvgCandlestick();
-const bollingerBands = bollingerBandSeries();
-
 const multi = fc
   .seriesSvgMulti()
-  .series([gridlines, bollingerBands, candlestick]);
+  .series([
+    fc.annotationSvgGridline(),
+    bollingerBandSeries(),
+    fc.seriesSvgCandlestick(),
+  ]);
 
 chart.svgPlotArea(multi);
 
@@ -63,7 +70,8 @@ const pushUpdate = ({ date, value }) => {
 };
 
 const start = async () => {
-  for await (const update of feed("ETH-USD")) {
+  const iterator = await subscriptionService.subscribe("ETH-USD");
+  for await (const update of iterator) {
     if (Array.isArray(update)) {
       data = update;
     } else {
