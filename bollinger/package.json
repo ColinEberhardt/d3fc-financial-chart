@@ -1,0 +1,20 @@
+{
+  "name": "bollinger",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "node tests",
+    "asbuild:untouched": "asc assembly/index.ts -b build/untouched.wasm -t build/untouched.wat --validate --sourceMap --debug --memoryBase 100000 --importMemory --sharedMemory --enable threads",
+    "asbuild:optimized": "asc assembly/index.ts -b build/optimized.wasm -t build/optimized.wat --validate --sourceMap --optimize --memoryBase 100000 --importMemory --sharedMemory ",
+    "asbuild": "npm run asbuild:untouched && npm run asbuild:optimized"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "assemblyscript": "^0.9.4"
+  },
+  "dependencies": {
+    "@assemblyscript/loader": "^0.9.4"
+  }
+}

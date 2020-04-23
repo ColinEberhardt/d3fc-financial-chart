@@ -1,7 +1,10 @@
 class ChartBuffer {
   constructor(length, ...fields) {
-    this.buffer = new SharedArrayBuffer(length * fields.length * 4);
-    this.array = new Int32Array(this.buffer);
+    this.memory = new WebAssembly.Memory({
+      initial: 10,
+      maximum: 100,
+    });
+    this.array = new Int32Array(this.memory.buffer);
     this.fields = fields;
     this.length = length;
   }
@@ -18,7 +21,7 @@ class ChartBuffer {
   setItem(index, value) {
     this.fields.forEach((field, fieldIndex) => {
       const offset = index * this.fields.length + fieldIndex;
-      if (value[field.name]) {
+      if (value.hasOwnProperty(field.name)) {
         this.array[offset] = field.converter.encode(value[field.name]);
       }
     });
@@ -43,12 +46,20 @@ const ffromi = new Float32Array(itof.buffer);
 const ftoi = new Float32Array(1);
 const ifromf = new Int32Array(ftoi.buffer);
 
+const nullValue = 0x01010101;
+
 const FloatFieldConverter = {
   decode: (value) => {
+    if (value === nullValue) {
+      return null;
+    }
     itof[0] = value;
     return ffromi[0];
   },
   encode: (value) => {
+    if (value === null) {
+      return nullValue;
+    }
     ftoi[0] = value;
     return ifromf[0];
   },
