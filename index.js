@@ -4,10 +4,12 @@ import {
 } from "https://unpkg.com/comlink@4.2.0/dist/esm/comlink.mjs";
 import { asyncIterableTransferHandler } from "./iterableTransferHandlers.js";
 import bollingerBandSeries from "./bollingerBandSeries.js";
-import { init, calculate } from "./bollingerCalculator.js";
+// import { init, calculate } from "./bollingerCalculator.js";
 
 transferHandlers.set("asyncIterable", asyncIterableTransferHandler);
 const subscriptionService = wrap(new Worker("./feed.js", { type: "module" }));
+
+const bollingerCalc = wrap(new Worker("./bollingerCalculator.js", { type: "module" }));
 
 let data = [];
 
@@ -38,10 +40,10 @@ const multi = fc
 
 chart.svgPlotArea(multi);
 
-const renderChart = () => {
+const renderChart = async () => {
   // Create and apply the bollinger algorithm
   // const bollingerAlgorithm = fc.indicatorBollingerBands().value((d) => d.close);
-  const bollingerData = calculate(data, 10);
+  const bollingerData = await bollingerCalc.calculate(data, 10);
   const mergedData = data.map((d, i) => ({
     ...d,
     bollinger: bollingerData[i],
@@ -71,7 +73,7 @@ const pushUpdate = ({ date, value }) => {
 };
 
 const start = async () => {
-  await init();
+  await bollingerCalc.init();
   const iterator = await subscriptionService.subscribe("ETH-USD");
   for await (const update of iterator) {
     if (Array.isArray(update)) {

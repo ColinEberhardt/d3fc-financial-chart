@@ -1,7 +1,11 @@
+import { expose } from "https://unpkg.com/comlink@4.2.0/dist/esm/comlink.mjs";
+
 let memory, compute;
 
 const init = async () => {
-  const { instance: {exports} } = await WebAssembly.instantiateStreaming(
+  const {
+    instance: { exports },
+  } = await WebAssembly.instantiateStreaming(
     fetch("bollinger/build/untouched.wasm"),
     {
       env: { trace: () => {}, abort: () => {} },
@@ -28,7 +32,7 @@ const calculate = (data, period) => {
       output[i] = {
         upper: buffer[i * 4 + 1],
         lower: buffer[i * 4 + 2],
-        average: buffer[i * 4 + 3]
+        average: buffer[i * 4 + 3],
       };
     }
   });
@@ -36,4 +40,4 @@ const calculate = (data, period) => {
   return output;
 };
 
-export { calculate, init };
+expose({ calculate, init });
