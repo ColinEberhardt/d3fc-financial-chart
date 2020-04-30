@@ -1,0 +1,27 @@
+body {
+  background-color: black;
+  font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+  color: white;
+}
+
+.gridline-x, .gridline-y {
+  stroke: #555;
+}
+
+.tick path {
+  stroke: white;
+}
+
+text {
+  fill: white;
+}
+
+.bollinger.area path {
+  fill: rgba(255, 255, 255, 0.2)
+}
+
+.bollinger.upper path,
+.bollinger.lower path,
+.bollinger.average path {
+  stroke: white;
+}

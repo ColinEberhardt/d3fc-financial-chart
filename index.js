@@ -26,8 +26,7 @@ const yExtent = fc
 
 // create a chart
 const chart = fc
-  .chartCartesian(d3.scaleTime(), d3.scaleLinear())
-  .chartLabel("Streaming Idempotent Chart");
+  .chartCartesian(d3.scaleTime(), d3.scaleLinear());
 
 // Create the gridlines and series
 const multi = fc
@@ -41,15 +40,11 @@ const multi = fc
 chart.svgPlotArea(multi);
 
 const renderChart = async () => {
-  // Create and apply the bollinger algorithm
-  // const bollingerAlgorithm = fc.indicatorBollingerBands().value((d) => d.close);
   const bollingerData = await bollingerCalc.calculate(data, 10);
   const mergedData = data.map((d, i) => ({
     ...d,
     bollinger: bollingerData[i],
   }));
-
-  // update domain
   chart.xDomain(xExtent(mergedData)).yDomain(yExtent(mergedData));
 
   d3.select("#chart").datum(mergedData).call(chart);
